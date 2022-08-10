@@ -11,6 +11,7 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 	// x, y 방향 값을 외부에서 열람할 수 있도록 Get 전용 프로퍼티 정의
 	public float Horizontal => touchPosition.x;
 	public float Vertical => touchPosition.y;
+	public float PlayerAngle;
 
 	private void Awake()
 	{
@@ -46,6 +47,8 @@ public class VirtualJoystick : MonoBehaviour, IPointerDownHandler, IDragHandler,
 			touchPosition.y = (touchPosition.y / imageBackground.rectTransform.sizeDelta.y * 2);
 
 			touchPosition = new Vector2(touchPosition.x, touchPosition.y);
+
+			PlayerAngle = Mathf.Atan2(touchPosition.y, touchPosition.x) * 180 / Mathf.PI;
 
 			// touchPosition 값의 정규화 [-1 ~ 1]
 			// 가상 조이스틱 배경 이미지 밖으로 터치가 나가게 되면 -1 ~ 1보다 큰 값이 나올 수 있다

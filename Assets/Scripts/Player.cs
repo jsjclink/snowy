@@ -15,8 +15,12 @@ public class Player : MonoBehaviour
         float jx = virtualJoystick.Horizontal;
         float jy = virtualJoystick.Vertical;
 
+        float ag = virtualJoystick.PlayerAngle;
+
         // transform.position += moveDirection * moveSpeed * Time.deltaTime;
         // moveDirection = new Vector3(x, y, 0);
+
+        this.transform.rotation = Quaternion.AngleAxis(ag - 90, Vector3.forward);
 
         if (x != 0 && y != 0)
         {
