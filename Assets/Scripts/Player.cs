@@ -7,9 +7,6 @@ public class Player : MonoBehaviour
     public float moveSpeed = 5.0f;
     // Update is called once per frame
 
-    private void Awake()
-    {
-    }
     void FixedUpdate()
     {
         float x = Input.GetAxisRaw("Horizontal");
@@ -21,8 +18,15 @@ public class Player : MonoBehaviour
         // transform.position += moveDirection * moveSpeed * Time.deltaTime;
         // moveDirection = new Vector3(x, y, 0);
 
-        transform.position += new Vector3(x, y, 0) * moveSpeed * Time.deltaTime;
-        transform.position += new Vector3(jx, jy, 0) * moveSpeed * Time.deltaTime;
+        if (x != 0 && y != 0)
+        {
+            transform.position += new Vector3(x, y, 0) * moveSpeed * 0.625f * Time.deltaTime;
+        }
+        else
+        {
+            transform.position += new Vector3(x, y, 0) * moveSpeed * Time.deltaTime;
+            transform.position += new Vector3(jx, jy, 0) * moveSpeed * Time.deltaTime;
+        }
 
     }
 }
