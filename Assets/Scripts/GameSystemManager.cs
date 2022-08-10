@@ -62,13 +62,22 @@ public class ChunkInfo
 public class MapInfo
 {
     public ChunkInfo[,] chunk_arr;
+    public int seed; public int map_size; public int chunk_size; public int noise_density; public int iterations;
 
     public MapInfo(int seed, int map_size, int chunk_size, int noise_density, int iterations)
     {
+        this.seed = seed;
+        this.map_size = map_size;
+        this.chunk_size = chunk_size;
+        this.noise_density = noise_density;
+        this.iterations = iterations;
+
         UnityEngine.Random.InitState(seed);
         InitChunkArr(map_size, chunk_size, noise_density, iterations);
         MarkBoundaryChunks(map_size, chunk_size);
-        EroseBoundaryChunks(map_size, chunk_size);
+        EroseBoundaryChunkTerrain(map_size, chunk_size);
+        EroseBoundaryChunkTerrain(map_size, chunk_size);
+        EroseBoundaryChunkTerrain(map_size, chunk_size);
         MarkBoundaryTerrains(map_size, chunk_size);
     }
 
@@ -154,6 +163,48 @@ public class MapInfo
         }
     }
 
+    private void EroseBoundaryChunkTerrain(int map_size, int chunk_size)
+    {
+        ChunkInfo[,] tmp_arr = CopyChunkArr(this.chunk_arr);
+
+        for(int x = 0; x < map_size; x++)
+        {
+            for(int y = 0; y < map_size; y++)
+            {
+                if (this.chunk_arr[x, y].chunk_type != ChunkType.BASE_NEAR_WALL) continue; 
+                for(int dx = 0; dx < chunk_size; dx++)
+                {
+                    for(int dy = 0; dy < chunk_size; dy++)
+                    {
+                        int neighbor_floor_cnt = 0;
+                        int[] dx_list = { 0, 1, 1, 1, 0, -1, -1, -1 };
+                        int[] dy_list = { 1, 1, 0, -1, -1, -1, 0, 1 };
+                        for(int di = 0; di < 8; di++)
+                        {
+                            if(IsValidChunkArrIndex(x, y, map_size) && IsValidGridArrIndex(dx + dx_list[di], dy + dy_list[di], chunk_size))
+                            {
+                                if (tmp_arr[x, y].grid[dx + dx_list[di], dy + dy_list[di]] == TerrainType.BASE_FLOOR)
+                                {
+                                    neighbor_floor_cnt++;
+                                }
+                            }
+                        }
+
+                        if(neighbor_floor_cnt > UnityEngine.Random.Range(0, 8))
+                        {
+                            this.chunk_arr[x, y].grid[dx, dy] = TerrainType.BASE_FLOOR;
+                        }
+                        else
+                        {
+                            this.chunk_arr[x, y].grid[dx, dy] = TerrainType.BASE_WALL;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
     private TerrainType[,] GetTerrainArr(int map_size, int chunk_size)
     {
         TerrainType[,] terrain_arr = new TerrainType[map_size * chunk_size, map_size * chunk_size];
@@ -215,10 +266,6 @@ public class MapInfo
         }
     }
 
-    private void EroseBoundaryChunks(int map_size, int chunk_size)
-    {
-    }
-
     public static ChunkInfo[,] CopyChunkArr(ChunkInfo[,] target_arr)
     {
         ChunkInfo[,] ret_arr = new ChunkInfo[target_arr.GetLength(0), target_arr.GetLength(1)];
@@ -233,33 +280,54 @@ public class MapInfo
 
         return ret_arr;
     }
+    public static bool IsValidChunkArrIndex(int x, int y, int map_size)
+    {
+        if (x >= 0 && x < map_size && y >= 0 && y <= map_size) return true;
+        else return false;
+    }
+    public static bool IsValidGridArrIndex(int x, int y, int chunk_size)
+    {
+        if (x >= 0 && x < chunk_size && y >= 0 && y < chunk_size) return true;
+        else return false;
+    }
 }
 
 public class GameSystemManager : MonoBehaviour
 {
-    MapInfo map_info;
-
     [SerializeField]
     Camera cam;
+
+    [SerializeField]
+    GameObject player_obj;
+
     [SerializeField]
     GameObject tile_base_floor_pref;
     [SerializeField]
     GameObject tile_base_wall_pref;
     [SerializeField]
     GameObject tile_base_near_wall_pref;
+
+    public MapInfo map_info;
     void Start()
     {
+        //graphic
         SetResolution();
 
-        int chunk_size = 1;
-
-        this.map_info = new MapInfo(0, 50, chunk_size, 40, 3);
-        DrawEntireMap(chunk_size);
+        //init map
+        int seed = 0; int map_size = 50; int chunk_size = 5; int noise_density = 40; int iterations = 3;
+        this.map_info = new MapInfo(seed, map_size, chunk_size, noise_density, iterations);
+        //draw map
+        DrawEntireMap();
+        //spawn player
+        SpawnPlayer();
     }
 
     void Update()
     {
+        float x = Input.GetAxisRaw("Horizontal");
+        float y = Input.GetAxisRaw("Vertical");
 
+        player_obj.transform.position += new Vector3(x, y, 0) * 1 * Time.deltaTime;
     }
 
     void SetResolution()
@@ -284,11 +352,15 @@ public class GameSystemManager : MonoBehaviour
         }
     }
 
-    void DrawEntireMap(int chunk_size)
+    void DrawEntireMap()
     {
-        for (int x = 0; x < 50; x++)
+        MapInfo cur_map_info = this.map_info;
+        int map_size = this.map_info.map_size;
+        int chunk_size = this.map_info.chunk_size;
+
+        for (int x = 0; x < map_size; x++)
         {
-            for (int y = 0; y < 50; y++)
+            for (int y = 0; y < map_size; y++)
             {
                 for (int dx = 0; dx < chunk_size; dx++)
                 {
@@ -312,4 +384,28 @@ public class GameSystemManager : MonoBehaviour
         }
     }
 
+    void SpawnPlayer()
+    {
+        MapInfo cur_map_info = this.map_info;
+        int map_size = this.map_info.map_size;
+        int chunk_size = this.map_info.chunk_size;
+
+        for(int x = 0; x < map_size; x++)
+        {
+            for(int y = 0; y < map_size; y++)
+            {
+                for(int dx = 0; dx < chunk_size; dx++)
+                {
+                    for(int dy = 0; dy < chunk_size; dy++)
+                    {
+                        if (cur_map_info.chunk_arr[x, y].grid[dx, dy] == TerrainType.BASE_FLOOR)
+                        {
+                            player_obj.transform.position = new Vector3(x * chunk_size + dx, y * chunk_size + dy, 0);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
