@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public enum TerrainType { BASE_FLOOR, BASE_WALL, BASE_NEAR_WALL };
@@ -313,6 +310,7 @@ public class GameSystemManager : MonoBehaviour
         //graphic
         SetResolution();
 
+
         //init map
         int seed = 0; int map_size = 50; int chunk_size = 5; int noise_density = 40; int iterations = 3;
         this.map_info = new MapInfo(seed, map_size, chunk_size, noise_density, iterations);
@@ -350,6 +348,7 @@ public class GameSystemManager : MonoBehaviour
             float newHeight = ((float)phone_width / phone_height) / ((float)set_width / set_height);
             cam.rect = new Rect(0f, (1f - newHeight) / 2f, 1f, newHeight);
         }
+
     }
 
     void DrawEntireMap()
